@@ -1,0 +1,9 @@
+<button onclick="toggle()">Toggle</button>
+<div id="panel" hidden>Secret content here</div>
+
+<script>
+function toggle() {
+  const p = document.getElementById('panel');
+  p.hidden = !p.hidden;
+}
+</script>

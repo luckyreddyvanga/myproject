@@ -1,0 +1,321 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Animated To‑Do App (Bootstrap)</title>
+  <!-- Bootstrap CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+  <style>
+    :root{
+      --accent:#6f42c1; /* default tint */
+    }
+    body{background:linear-gradient(120deg, #f8f9fa 0%, #eef2ff 100%);}
+    .app-card{border-radius:18px; box-shadow:0 8px 28px rgba(50,50,93,0.06); overflow:hidden}
+    .accent{background:linear-gradient(90deg,var(--accent), rgba(0,0,0,0.06)); color:white}
+
+    /* Animated floating header */
+    .logo-anim{animation:float 4s ease-in-out infinite}
+    @keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
+
+    /* Task entry animation */
+    .task-enter{animation:enter 380ms ease-out}
+    .task-leave{animation:leave 260ms ease-in forwards}
+    @keyframes enter{from{opacity:0; transform:translateY(-10px) scale(.99)} to{opacity:1; transform:none}}
+    @keyframes leave{to{opacity:0; transform:translateX(20px) scale(.98); height:0; margin:0; padding:0}}
+
+    /* Sizes */
+    .size-sm .task-card{font-size:.9rem}
+    .size-lg .task-card{font-size:1.1rem}
+
+    /* Tint swatches */
+    .swatch{width:34px;height:34px;border-radius:8px;display:inline-block;border:2px solid rgba(255,255,255,0.5);cursor:pointer}
+    .swatch:active{transform:scale(.96)}
+
+    /* Image overlay for cards */
+    .task-img{height:80px; object-fit:cover; border-radius:12px}
+
+    /* Helper to fade small buttons */
+    .muted-btn{opacity:0.85}
+
+    /* Responsive tweaks */
+    @media (max-width:767px){
+      .grid-two{grid-template-columns:1fr}
+    }
+  </style>
+</head>
+<body>
+  <div class="container py-5">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+      <div class="d-flex align-items-center gap-3">
+        <div class="p-3 rounded-circle accent logo-anim"><i class="bi bi-list-check fs-4"></i></div>
+        <div>
+          <h3 class="mb-0">My Animated To‑Do</h3>
+          <small class="text-muted">Organize, style & animate your tasks</small>
+        </div>
+      </div>
+      <div>
+        <button class="btn btn-outline-primary me-2" data-bs-toggle="modal" data-bs-target="#loginModal">Login</button>
+        <button id="clearAll" class="btn btn-outline-danger">Clear All</button>
+      </div>
+    </div>
+
+    <div class="row g-4">
+      <div class="col-lg-4">
+        <div class="app-card p-4 bg-white">
+          <h5 class="mb-3">Add Task</h5>
+          <form id="taskForm" class="mb-3">
+            <div class="mb-2">
+              <input id="taskTitle" class="form-control" placeholder="Task title" required>
+            </div>
+            <div class="mb-2">
+              <input id="taskImage" class="form-control" placeholder="Image URL (optional)">
+            </div>
+            <div class="mb-3 d-flex gap-2 align-items-center">
+              <label class="mb-0">Size:</label>
+              <div class="btn-group" role="group">
+                <input type="radio" class="btn-check" name="size" id="sizeSm" value="sm">
+                <label class="btn btn-outline-secondary" for="sizeSm">S</label>
+                <input type="radio" class="btn-check" name="size" id="sizeMd" value="md" checked>
+                <label class="btn btn-outline-secondary" for="sizeMd">M</label>
+                <input type="radio" class="btn-check" name="size" id="sizeLg" value="lg">
+                <label class="btn btn-outline-secondary" for="sizeLg">L</label>
+              </div>
+            </div>
+            <div class="mb-3">
+              <label class="mb-1 d-block">Color Tint</label>
+              <div id="swatches" class="d-flex gap-2">
+                <span class="swatch" data-color="#6f42c1" style="background:#6f42c1"></span>
+                <span class="swatch" data-color="#0d6efd" style="background:#0d6efd"></span>
+                <span class="swatch" data-color="#198754" style="background:#198754"></span>
+                <span class="swatch" data-color="#dc3545" style="background:#dc3545"></span>
+                <span class="swatch" data-color="#fd7e14" style="background:#fd7e14"></span>
+              </div>
+            </div>
+            <div class="d-grid">
+              <button class="btn btn-primary" type="submit"><i class="bi bi-plus-circle me-2"></i>Add task</button>
+            </div>
+          </form>
+
+          <hr>
+          <h6 class="mb-2">Preview</h6>
+          <div id="preview" class="card p-2 border-0 shadow-sm">
+            <div class="d-flex gap-2 align-items-center">
+              <img id="previewImg" src="https://images.unsplash.com/photo-1545235617-9465f2f7d0b2?w=400&q=60" class="task-img me-2" alt="preview">
+              <div>
+                <div id="previewTitle" class="fw-semibold">Example task</div>
+                <small class="text-muted">Medium • Colored tint</small>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <div class="col-lg-8">
+        <div id="todoArea" class="app-card p-4 bg-white">
+          <div class="d-flex justify-content-between align-items-center mb-3">
+            <h5 class="mb-0">Tasks</h5>
+            <div class="d-flex gap-2 align-items-center">
+              <div class="form-check form-switch">
+                <input class="form-check-input" type="checkbox" id="compactToggle">
+                <label class="form-check-label small text-muted" for="compactToggle">Compact</label>
+              </div>
+            </div>
+          </div>
+
+          <div id="taskGrid" class="grid-two" style="display:grid; grid-template-columns:repeat(2,1fr); gap:18px">
+            <!-- Task cards injected here -->
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Login Modal -->
+  <div class="modal fade" id="loginModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header accent">
+          <h5 class="modal-title text-white">Login</h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <form id="loginForm">
+            <div class="mb-3">
+              <label class="form-label">Email</label>
+              <input type="email" id="loginEmail" class="form-control" required>
+            </div>
+            <div class="mb-3">
+              <label class="form-label">Password</label>
+              <input type="password" id="loginPassword" class="form-control" required>
+            </div>
+            <div class="d-grid">
+              <button class="btn btn-primary">Sign in</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bootstrap JS -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script>
+    // Basic app state
+    const tasksKey = 'todo_tasks_v1';
+    let tasks = JSON.parse(localStorage.getItem(tasksKey) || '[]');
+    let currentTint = getComputedStyle(document.documentElement).getPropertyValue('--accent').trim() || '#6f42c1';
+
+    // Elements
+    const taskGrid = document.getElementById('taskGrid');
+    const form = document.getElementById('taskForm');
+    const titleInput = document.getElementById('taskTitle');
+    const imgInput = document.getElementById('taskImage');
+    const swatches = document.getElementById('swatches');
+    const previewImg = document.getElementById('previewImg');
+    const previewTitle = document.getElementById('previewTitle');
+    const sizeInputs = document.getElementsByName('size');
+    const clearAllBtn = document.getElementById('clearAll');
+    const compactToggle = document.getElementById('compactToggle');
+
+    // Helpers
+    function save(){ localStorage.setItem(tasksKey, JSON.stringify(tasks)); }
+
+    function setTint(color){
+      document.documentElement.style.setProperty('--accent', color);
+      currentTint = color;
+      // update accent areas
+      document.querySelectorAll('.accent').forEach(el=>el.style.background = `linear-gradient(90deg, ${color}, rgba(0,0,0,0.06))`);
+    }
+
+    // Render tasks
+    function render(){
+      taskGrid.innerHTML='';
+      const size = Array.from(sizeInputs).find(i=>i.checked).value;
+      document.getElementById('todoArea').classList.remove('size-sm','size-md','size-lg');
+      document.getElementById('todoArea').classList.add(size==='sm'?'size-sm':(size==='lg'?'size-lg':'size-md'));
+
+      tasks.forEach((t, i) => {
+        const col = document.createElement('div');
+        col.className = 'task-card p-3 bg-white rounded-3 border';
+        col.style.transition = 'all 220ms';
+        col.innerHTML = `
+          <div class="d-flex gap-3 align-items-start">
+            <img src="${t.image||'https://images.unsplash.com/photo-1515879218367-8466d910aaa4?w=600&q=60'}" class="task-img" alt="task">
+            <div class="flex-grow-1">
+              <div class="d-flex justify-content-between align-items-start">
+                <div>
+                  <div class="fw-semibold">${escapeHtml(t.title)}</div>
+                  <small class="text-muted">${t.size || 'md'}</small>
+                </div>
+                <div class="d-flex gap-1">
+                  <button class="btn btn-sm btn-outline-success muted-btn" title="Done" data-i="${i}"><i class="bi bi-check-lg"></i></button>
+                  <button class="btn btn-sm btn-outline-danger" title="Delete" data-del="${i}"><i class="bi bi-trash"></i></button>
+                </div>
+              </div>
+              <div class="mt-2">
+                <div class="progress" style="height:8px">
+                  <div class="progress-bar" role="progressbar" style="width:${t.progress||0}% ; background:${t.tint||currentTint}"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        `;
+
+        // tint border and small accent
+        col.style.borderColor = hexToRgba(t.tint||currentTint, .12);
+        col.style.boxShadow = `0 6px 18px ${hexToRgba(t.tint||currentTint, 0.06)}`;
+        col.classList.add('task-enter');
+        taskGrid.appendChild(col);
+
+        // event listeners
+        col.querySelector('[data-del]')?.addEventListener('click', ()=> removeTask(i, col));
+        col.querySelector('[data-i]')?.addEventListener('click', ()=> markDone(i, col));
+      });
+    }
+
+    function addTask(task){
+      tasks.unshift(task);
+      save();
+      render();
+    }
+
+    function removeTask(i, el){
+      el.classList.add('task-leave');
+      setTimeout(()=>{ tasks.splice(i,1); save(); render(); }, 300);
+    }
+
+    function markDone(i, el){
+      tasks[i].progress = 100;
+      save();
+      el.style.transform = 'scale(.99)';
+      render();
+    }
+
+    // Form handlers
+    form.addEventListener('submit', (e)=>{
+      e.preventDefault();
+      const size = Array.from(sizeInputs).find(i=>i.checked).value;
+      addTask({title:titleInput.value.trim(), image: imgInput.value.trim(), tint: currentTint, size: size, progress: 6});
+      titleInput.value=''; imgInput.value='';
+    });
+
+    // Preview handlers
+    imgInput.addEventListener('input', ()=> previewImg.src = imgInput.value || previewImg.src);
+    titleInput.addEventListener('input', ()=> previewTitle.textContent = titleInput.value || 'Example task');
+    swatches.querySelectorAll('.swatch').forEach(s=> s.addEventListener('click', (ev)=>{
+      setTint(ev.target.dataset.color);
+    }));
+
+    // Clear all
+    clearAllBtn.addEventListener('click', ()=>{
+      if(!confirm('Clear all tasks?')) return;
+      tasks = []; save(); render();
+    });
+
+    // Compact toggle
+    compactToggle.addEventListener('change', ()=>{
+      document.getElementById('todoArea').classList.toggle('compact', compactToggle.checked);
+      taskGrid.style.gridTemplateColumns = compactToggle.checked? 'repeat(3,1fr)' : 'repeat(2,1fr)';
+    });
+
+    // Utilities
+    function escapeHtml(s){ return (s||'').replace(/[&<>"']/g, (c)=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":"&#39;" })[c]); }
+    function hexToRgba(hex, alpha=1){
+      const h = hex.replace('#','');
+      const bigint = parseInt(h.length===3? h.split('').map(c=>c+c).join(''): h,16);
+      const r = (bigint >> 16) & 255; const g = (bigint >> 8) & 255; const b = bigint & 255;
+      return `rgba(${r},${g},${b},${alpha})`;
+    }
+
+    // Login stub
+    document.getElementById('loginForm').addEventListener('submit', (e)=>{
+      e.preventDefault();
+      const email = document.getElementById('loginEmail').value.trim();
+      // This is a mock — replace with real auth if you connect to a backend
+      alert('Hello, '+email+'! (This demo uses a mock login)');
+      const modal = bootstrap.Modal.getInstance(document.getElementById('loginModal'));
+      modal.hide();
+    });
+
+    // Init
+    (function init(){
+      // default tint from first swatch
+      const firstSw = swatches.querySelector('.swatch');
+      if(firstSw) setTint(firstSw.dataset.color);
+      render();
+
+      // seed example if empty
+      if(tasks.length===0){
+        addTask({title:'Buy groceries', image:'https://images.unsplash.com/photo-1601004890684-d8cbf643f5f2?w=800&q=60', tint:currentTint, size:'md', progress:18});
+        addTask({title:'Prepare slides', image:'https://images.unsplash.com/photo-1526657559016-4b9f7a0d6b55?w=800&q=60', tint:currentTint, size:'md', progress:36});
+      }
+    })();
+
+  </script>
+</body>
+</html>
